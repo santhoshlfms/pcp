@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel='stylesheet' href='/stylesheets/cardfields.css' />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+  </head>
+  <body>
+    
+    <div class="container"> 
+        <div class="row">
+            <div>
+                <b>Unbranded credit cards (hosted-fields)</b> - merchant email : <b>usmerchant@pp.com</b>
+            </div>
+        </div>
+
+        <div class="row">
+            <p><b>Client Id :</b>  AewxJKaqy87gUq3czFfD9j_5cKvSu7PXyGd2uUAO6iz_PY1LDs5d2KnFZ-32BKMslmoQ_Pe77O0tg8LA</p>
+        </div>
+
+        <div>
+          <ul>
+            <li>1. steps here   </li>
+          </ul>
+        </div>
+
+        <div class="text-center" id="loader">
+          loading . . .
+        </div>
+        
+
+        <div class="row">
+            <div id="advancedcards">
+                  <!-- Advanced credit and debit card payments form -->
+                <div class="card_container">
+                    <form id="my-sample-form">
+
+                    <label for="card-number">Card Number</label><div id="card-number" class="card_field"></div>
+                    <div>
+                        <label for="expiration-date">Expiration Date</label><div id="expiration-date" class="card_field"></div>
+                    </div>
+                    <div>
+                        <label for="cvv">CVV</label><div id="cvv" class="card_field"></div>
+                    </div>
+                    <label for="card-holder-name">Name on Card</label><input type="text" id="card-holder-name" name="card-holder-name" autocomplete="off" placeholder="card holder name" value="Santhosh"/>
+                    <div>
+                        <label for="card-billing-address-street">Billing Address</label><input type="text" id="card-billing-address-street" name="card-billing-address-street" autocomplete="off" value="North First Street" placeholder="street address"/>
+                    </div>
+                    <div>
+                        <label for="card-billing-address-unit">&nbsp;</label><input type="text" id="card-billing-address-unit" name="card-billing-address-unit" autocomplete="off" placeholder="unit" value="San Jose"/>
+                    </div>
+                    <div>
+                        <input type="text" id="card-billing-address-city" name="card-billing-address-city" autocomplete="off" placeholder="city" value="San Jose"/>
+                    </div>
+                    <div>
+                        <input type="text" id="card-billing-address-state" name="card-billing-address-state" autocomplete="off" placeholder="state" value="CA"/>
+                    </div>
+                    <div>
+                        <input type="text" id="card-billing-address-zip" name="card-billing-address-zip" autocomplete="off" placeholder="zip / postal code" value="2211"/>
+                    </div>
+                    <div>
+                        <input type="text" id="card-billing-address-country" name="card-billing-address-country" autocomplete="off" placeholder="country code" value="US"/>
+                    </div>
+                    <br><br>
+                      <button value="submit" id="submit" class="btn">Pay</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+   
+
+    <script
+      src="https://code.jquery.com/jquery-2.2.4.min.js"
+      integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+      crossorigin="anonymous"></script>
+
+      <script>
+
+        function loadjscssfile(filename, dataattribute){
+            var fileref=document.createElement('script')
+            fileref.setAttribute("type","text/javascript")
+            fileref.setAttribute("src", filename)
+            fileref.setAttribute("data-client-token", dataattribute)
+
+           if (typeof fileref!="undefined")
+            document.getElementsByTagName("head")[0].appendChild(fileref)
+          }
+
+          $( document ).ready(function() {
+            console.log( "ready!" );
+
+            $.post( "/generate-client-token", function( data ) {
+                let clientToken = JSON.parse(data).client_token;
+                var scriptSRC = "https://www.paypal.com/sdk/js?components=hosted-fields,buttons&client-id=AewxJKaqy87gUq3czFfD9j_5cKvSu7PXyGd2uUAO6iz_PY1LDs5d2KnFZ-32BKMslmoQ_Pe77O0tg8LA";
+                loadjscssfile(scriptSRC, clientToken);
+                $('#my-sample-form').hide(); 
+                setTimeout(function(){
+                  loadCreditCardFeilds();
+                  $('#my-sample-form').show(); 
+                  $('#loader').hide();
+                },7000)
+            });
+
+           
+          });
+
+          function loadCreditCardFeilds() {
+            // Check eligibility for advanced credit and debit card payments
+            if (paypal.HostedFields.isEligible()) {
+                console.log("isEligible");
+                paypal.HostedFields.render({
+                    createOrder: function () {
+                        return fetch("/merchants-create-orders", {
+                            method: "POST",
+                            headers: {
+                              Accept: "application/json",
+                              "Content-Type": "application/json"
+                            }
+                          })
+                          .then(res => res.json())
+                          .then(res => {
+                            res = JSON.parse(res)
+                            if(!res.id)
+                              console.log(JSON.stringify(res, null, 4));
+                            else
+                               console.log("Order Id : "+ res.id)
+                            return res.id;
+                          })
+                          //.then(d => d.id);
+                      //  return "order-ID";
+                    }, // replace with your order ID
+                    styles: {
+                      'input': {
+                        'font-size': '17px',
+                        'font-family': 'helvetica, tahoma, calibri, sans-serif',
+                        'color': '#3a3a3a'
+                      },
+                      ':focus': {
+                        'color': 'black'
+                      }
+                    },
+                    fields: {
+                      number: {
+                        selector: '#card-number',
+                        placeholder: 'card number',
+                        prefill: "4493573935388639"
+                      },
+                      cvv: {
+                        selector: '#cvv',
+                        placeholder: 'card security number',
+                        prefill:'742'
+                      },
+                      expirationDate: {
+                        selector: '#expiration-date',
+                        placeholder: 'mm/yy',
+                        prefill:'11/22'
+                      }
+                    }
+                  }).then(function (hf) {
+                    $('#my-sample-form').submit(function (event) {
+                      event.preventDefault();
+                      hf.submit({
+                        // Cardholder Name
+                        cardholderName: document.getElementById('card-holder-name').value,
+                        // Billing Address
+                        billingAddress: {
+                          streetAddress: document.getElementById('card-billing-address-street').value,      // address_line_1 - street
+                          extendedAddress: document.getElementById('card-billing-address-unit').value,       // address_line_2 - unit
+                          region: document.getElementById('card-billing-address-state').value,           // admin_area_1 - state
+                          locality: document.getElementById('card-billing-address-city').value,          // admin_area_2 - town / city
+                          postalCode: document.getElementById('card-billing-address-zip').value,           // postal_code - postal_code
+                          countryCodeAlpha2: document.getElementById('card-billing-address-country').value   // country_code - country
+                        }
+                      }).then(function(payload){
+                        console.log(payload);
+                        let orderId = payload.orderId;
+                        
+                        if(orderId) {
+                          $.post( "/capture-payments?id="+orderId, function( data ) {
+                            console.log(data)
+                            data = JSON.parse(data);
+                            if(data.status == "COMPLETED") {
+                              alert("Payment processed")
+                            }
+                          });
+                        }
+                      });
+                    });
+                  });
+            }else {
+                $('#my-sample-form').hide(); 
+            }
+            
+        }
+        
+     </script>
+    
+ </body>
+</html>

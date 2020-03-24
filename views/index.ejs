@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+  </head>
+  <body>
+    
+   <!-- Image and text -->
+    <nav class="navbar navbar-light" style="background-color: #e3f2fd;">
+      <a class="navbar-brand" href="#">
+       Partner - <%= clientId %>
+      </a>
+    </nav>
+
+    <div class="container">
+      <div class="row mt-2">
+        <div id="clientId" style="display: none;"><%= clientId %></div>
+        <form class="form-inline">
+          <div class="form-group mb-2">
+            <input type="text" readonly class="form-control-plaintext" id="staticEmail2" value="Merchant Email(Payee)">
+          </div>
+          <div class="form-group mx-sm-3 mb-2">
+            <label for="merchantEmail" class="sr-only">Password</label>
+            <input type="text" class="form-control" id="merchantEmail" placeholder="Email">
+          </div>
+          <button type="button" class="btn btn-primary mb-2" id="createPaymentButton">Create Payment Button</button>
+        </form>
+      </div>
+
+      <div class="row mt-4">
+        <div id="paypal-payment-holder">
+          
+        </div>
+      </div>
+    </div>
+
+    <script
+      src="https://code.jquery.com/jquery-2.2.4.min.js"
+      integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+      crossorigin="anonymous">
+    </script>
+
+  
+
+
+
+    <script>
+
+      function loadjscssfile(filename){
+        var fileref=document.createElement('script')
+        fileref.setAttribute("type","text/javascript")
+        fileref.setAttribute("src", filename)
+       if (typeof fileref!="undefined")
+        document.getElementsByTagName("head")[0].appendChild(fileref)
+      }
+    
+      $( document ).ready(function() {
+        console.log( "ready!" );
+          var clientId = $("#clientId").text();
+          $("#createPaymentButton").on('click', function(){
+            let email = $("#merchantEmail").val();
+            console.log(clientId);
+            if(email && clientId) {
+              var scriptSRC = "https://www.paypal.com/sdk/js?client-id="+clientId;
+              loadjscssfile(scriptSRC);
+              loadjscssfile("../javascripts/paypalscripts.js");
+              setTimeout(function(){
+                // init paypal button here 
+                loadPayPalButton();
+              },5000)
+            }
+          })
+      });
+
+    </script>
+
+ </body>
+</html>
