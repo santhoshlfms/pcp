@@ -7,18 +7,18 @@ let payloadHelpers = require("../helpers/payloadHelpers");
 let apiHelpers = require("../helpers/apiHelpers");
 const uuidv1 = require('uuid/v1');
 
-
-
-/* GET home page. */
-// router.get('/', function(req, res, next) {
-//   res.render('index', { title: 'PCP STORE', clientId : config.clientId });
-// });
-
 router.get('/', function(req, res, next) {
   res.render('ucc', { title: 'PCP STORE', clientId : config.clientId });
 });
 
+router.get('/demo', function(req, res, next) {
+  res.render('demo', { title: 'PCP STORE', clientId : config.clientId });
+});
 
+
+router.get('/vault', function(req, res, next) {
+  res.render('vault', { title: 'PCP STORE', clientId : config.clientId });
+});
 
 router.post('/create-orders', function(req, res, next){
   //get accesstoken
@@ -74,9 +74,12 @@ router.post("/capture-payments", function(req, res, next) {
 
 
 router.post("/generate-client-token", function(req, res, next) {
+    let data = {
+      customer_id : ""
+    }
+    var customerToken = req.body.customerToken;
   
 
- 
     helper.generateAccessToken((accessToken)=>{
       let accessTokenResp = JSON.parse(accessToken);
       if(accessTokenResp.access_token.length > 0) {
@@ -87,12 +90,21 @@ router.post("/generate-client-token", function(req, res, next) {
             'Authorization': 'Bearer '+accessTokenResp.access_token,
             'Content-Type': 'application/json',
             'Accept-Language' : 'en_US'
-          }
+          },
+          json: true
         };
+        if(customerToken) {
+          console.log("customerToken", customerToken)
+          data.customer_id = customerToken;
+          console.log("customerToken", data)
+          options.body = {
+            customer_id : req.body.customerToken
+          }
+        }
         console.log(options)
-         apiHelpers.post(options,(respCreateOrders)=>{
-           console.log(respCreateOrders)
-           res.json(respCreateOrders)
+         apiHelpers.post(options,(clientTokenResps)=>{
+           console.log("clientTokenResps",clientTokenResps)
+           res.json(clientTokenResps)
          })
       }
      }) 

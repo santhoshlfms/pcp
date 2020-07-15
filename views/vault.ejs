@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/stylesheets/style.css" />
+    <link rel='stylesheet' href='/stylesheets/cardfields.css' />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <style>
+      #paypal-payment-holder{
+        max-width: 250px;
+      }
+    </style>
+  </head>
+  <body>
+    
+   <!-- Image and text -->
+    <nav class="navbar navbar-light" style="background-color: #e3f2fd;">
+      <a class="navbar-brand" href="#">
+       Partner - <%= clientId %>
+      </a>
+    </nav>
+
+    <div class="text-center" id="loader">
+      loading . . .
+    </div>
+    
+<div id="payment-block" style="display: none;">
+    <div class="container" id="std-payments" style="margin-top:50px">
+       <div id="paypal-payment-holder">
+      </div>
+    </div>
+
+    
+
+    <div class="container" id="custom-card-feilds" style="display: none"> 
+        <div class="card_container">
+          <form id="my-sample-form">
+            <label for="card-number">Card Number</label><div id="card-number" class="card_field"></div>
+            <div>
+                <label for="expiration-date">Expiration Date</label><div id="expiration-date" class="card_field"></div>
+            </div>
+            <div>
+                <label for="cvv">CVV</label><div id="cvv" class="card_field"></div>
+            </div>
+            <div>
+              <input type="checkbox" id="vault" name="vault">
+              <label for="vault">Save your card</label>
+            </div>
+            <br><br>
+              <button value="submit" id="submit" class="btn">Pay</button>
+          </form>
+      </div>
+    </div>
+   
+  </div>
+
+    <script
+      src="https://code.jquery.com/jquery-2.2.4.min.js"
+      integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+      crossorigin="anonymous">
+    </script>
+    
+   
+    <script>
+      function loadjscssfile(filename,dataattribute) {
+        var fileref=document.createElement('script')
+        fileref.setAttribute("type","text/javascript")
+        fileref.setAttribute("src", filename)
+        fileref.setAttribute("data-client-token", dataattribute)
+
+       if (typeof fileref!="undefined")
+        document.getElementsByTagName("head")[0].appendChild(fileref)
+      }
+    
+      $( document ).ready(function() {
+        console.log( "ready!" );
+        var unique_customer_no = "5cKvSu7PXyGd2uUAO12"
+        $.post( "/generate-client-token", {customerToken:unique_customer_no},function( data ) {
+          let clientToken = data.client_token;
+          var scriptSRC = "https://www.paypal.com/sdk/js?vault=true&client-id=AewxJKaqy87gUq3czFfD9j_5cKvSu7PXyGd2uUAO6iz_PY1LDs5d2KnFZ-32BKMslmoQ_Pe77O0tg8LA";
+          loadjscssfile(scriptSRC, clientToken);
+          
+          setTimeout(function(){
+            loadPayPalButton();
+            //loadCreditCardFeilds();
+            $('#payment-block').show();
+            $('#loader').hide();
+          },9000)
+      });
+      });
+
+
+        
+        
+
+        function loadPayPalButton() {
+          paypal
+              .Buttons({
+                // Specify the style of the button
+                style: {
+                  layout: "vertical",
+             
+                  label: "checkout" // checkout | pay | paypal
+                },
+                createOrder: function(data, actions) {
+                  return fetch("/merchants-create-orders", {
+                    method: "POST",
+                    headers: {
+                      Accept: "application/json",
+                      "Content-Type": "application/json"
+                    }
+                  })
+                  .then(res => res.json())
+                  .then(res => {
+                    res = JSON.parse(res)
+                    if(!res.id)
+                      console.log(JSON.stringify(res, null, 4));
+                    else
+                       console.log("Order Id : "+ res.id)
+                    return res.id;
+                  })
+                  
+                },
+               
+                onApprove: function(data, actions) {
+                  // Get the transaction details
+                  return fetch("/capture-payments?id="+data.orderID,{
+                    method: 'POST',
+                    headers: {
+                      Accept: "application/json",
+                      "Content-Type": "application/json"
+                    }
+                  })
+                  .then(res => res.json())
+                  .then(res => {
+                      
+                      res = JSON.parse(res);
+                      if(!res.id) {
+                          console.log(JSON.stringify(res,null,4));
+                      }
+                      if(res.status == 'COMPLETED') {
+                          alert("Payment captured")
+                      }
+                  })
+                
+                },
+                onCancel : function(err) {
+                  console.log(JSON.stringify(res,null,4));
+                  return  alert("You cancelled the operation");
+                },
+                onError: function(err) {
+                  console.log(err)
+                 // console.log("Some error occurred " + err);
+                  alert("Some Error Occurred . Please open console to see the error " + JSON.stringify(err));
+                },
+                onInit: function(data, actions) {
+                  console.log("PayPal Button Loaded");  
+                }
+              })
+              .render("#paypal-payment-holder")
+              .catch(err => {
+                console.log("errrrrror ", err);
+                console.log("ERROR - " + err.message, "error");
+              })
+          
+          }
+
+
+          function loadCreditCardFeilds() {
+            // Check eligibility for advanced credit and debit card payments
+            if (paypal.HostedFields.isEligible()) {
+                console.log("isEligible");
+                paypal.HostedFields.render({
+                    createOrder: function () {
+                        return fetch("/merchants-create-orders", {
+                            method: "POST",
+                            headers: {
+                              Accept: "application/json",
+                              "Content-Type": "application/json"
+                            }
+                          })
+                          .then(res => res.json())
+                          .then(res => {
+                            res = JSON.parse(res)
+                            if(!res.id)
+                              console.log(JSON.stringify(res, null, 4));
+                            else
+                               console.log("Order Id : "+ res.id)
+                            return res.id;
+                          })
+                          //.then(d => d.id);
+                      //  return "order-ID";
+                    }, // replace with your order ID
+                    styles: {
+                      'input': {
+                        'font-size': '17px',
+                        'font-family': 'helvetica, tahoma, calibri, sans-serif',
+                        'color': '#3a3a3a'
+                      },
+                      ':focus': {
+                        'color': 'black'
+                      }
+                    },
+                    fields: {
+                      number: {
+                        selector: '#card-number',
+                        placeholder: 'card number',
+                        prefill: "4493573935388639"
+                      },
+                      cvv: {
+                        selector: '#cvv',
+                        placeholder: 'card security number',
+                        prefill:'742'
+                      },
+                      expirationDate: {
+                        selector: '#expiration-date',
+                        placeholder: 'mm/yy',
+                        prefill:'11/22'
+                      }
+                    }
+                  }).then(function (hf) {
+                    $('#my-sample-form').submit(function (event) {
+                      event.preventDefault();
+                      hf.submit({
+                        // Cardholder Name
+                        cardholderName: document.getElementById('card-holder-name').value,
+                        // pass user consent 
+                        vault: document.querySelector('#vault').checked,
+                        // Billing Address
+                        billingAddress: {
+                          streetAddress: document.getElementById('card-billing-address-street').value,      // address_line_1 - street
+                          extendedAddress: document.getElementById('card-billing-address-unit').value,       // address_line_2 - unit
+                          region: document.getElementById('card-billing-address-state').value,           // admin_area_1 - state
+                          locality: document.getElementById('card-billing-address-city').value,          // admin_area_2 - town / city
+                          postalCode: document.getElementById('card-billing-address-zip').value,           // postal_code - postal_code
+                          countryCodeAlpha2: document.getElementById('card-billing-address-country').value   // country_code - country
+                        }
+                      }).then(function(payload){
+                        console.log(payload);
+                        let orderId = payload.orderId;
+                        
+                        if(orderId) {
+                          $.post( "/capture-payments?id="+orderId, function( data ) {
+                            console.log(data)
+                            data = JSON.parse(data);
+                            if(data.status == "COMPLETED") {
+                              alert("Payment processed")
+                            }
+                          });
+                        }
+                      });
+                    });
+                  });
+                  $('#my-sample-form').show(); 
+            }else {
+                $('#my-sample-form').hide(); 
+            }
+            console.log("loadCreditCardFeilds")
+        }
+
+        
+
+    </script>
+
+ </body>
+</html>

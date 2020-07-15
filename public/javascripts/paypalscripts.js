@@ -1,6 +1,5 @@
 function loadPayPalButton() {
-paypal
-    .Buttons({
+paypal.Buttons({
       // Specify the style of the button
       style: {
         layout: "vertical",
